@@ -1,0 +1,8 @@
+﻿NOTICES
+
+This project uses the following third-party libraries:
+
+---
+
+shimat/opencvsharp: Apache-2.0 license
+https://github.com/shimat/opencvshar
