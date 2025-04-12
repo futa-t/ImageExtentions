@@ -1,4 +1,5 @@
 ﻿using System.Drawing;
+using System.Drawing.Imaging;
 using System.Runtime.Versioning;
 
 using OpenCvSharp;
@@ -48,10 +49,10 @@ public class SuperSampling : IDisposable
 
     public Bitmap ToBitmap()
         => Mat.ToBitmap();
-}
+}                
 
 [SupportedOSPlatform("windows")]
-public static class ImageExtentions
+public static class ByteExtentions
 {
 
     public static Image ImageFromByte(byte[] data, int width, int height)
@@ -89,5 +90,50 @@ public static class ImageExtentions
         if (srcMat == null || srcMat.Empty()) return null;
         return srcMat.ToBitmap();
     }
+
+    public static Image ToImage(this byte[] data ,int width, int height) => ImageFromByte(data, width, height);
+    public static Image ToImage(this byte[] data ,int size) => ImageFromByte(data, size);
+
+}
+
+[SupportedOSPlatform("windows")]
+public static class ImageExtentions {
+    public static Mat ToMat(this Image image)
+    {
+        using var ms = new MemoryStream();
+        image.Save(ms, ImageFormat.Png);
+        byte[] bytes = ms.ToArray();
+        return Cv2.ImDecode(bytes, ImreadModes.Unchanged);
+    }
+
+
+    public static Image Rounded(this Image image, int r)
+    {
+        using var ss = new SuperSampling(image.ToMat(), 2.0);
+        using var mask = CreateCircleMask(ss.Mat.Size());
+        ss.Mat.SetAlphaFromMask(mask);
+        ss.Resize(new OpenCvSharp.Size(r, r));
+
+        return ss.ToBitmap();
+    }
+
+    private static Mat CreateCircleMask(OpenCvSharp.Size size)
+    {
+        Mat mask = new(size, MatType.CV_8UC1, Scalar.Black);
+        int centerX = size.Width / 2;
+        int centerY = size.Height / 2;
+        int radius = Math.Min(centerX, centerY);
+        Cv2.Circle(mask, centerX, centerY, radius, Scalar.White, -1, LineTypes.AntiAlias);
+        return mask;
+    }
+
+    private static void SetAlphaFromMask(this Mat src, Mat mask)
+    {
+        Cv2.CvtColor(src, src, ColorConversionCodes.BGR2BGRA);
+        var channel = src.Split();
+        channel[3] = mask;
+        Cv2.Merge(channel, src);
+    }
+
 }
 
