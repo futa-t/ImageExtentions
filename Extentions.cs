@@ -19,7 +19,7 @@ public class SuperSampling : IDisposable
     private void Init(Mat srcMat, double scaleFactor)
     {
         orgSize = new(srcMat.Width, srcMat.Height);
-        Width= (int)(srcMat.Width * scaleFactor);
+        Width = (int)(srcMat.Width * scaleFactor);
         Height = (int)(srcMat.Height * scaleFactor);
         var samplingSize = new OpenCvSharp.Size(Width, Height);
         Cv2.Resize(srcMat, Mat, samplingSize, 0, 0, InterpolationFlags.Area);
@@ -38,7 +38,7 @@ public class SuperSampling : IDisposable
         => Mat.Size();
 
     public void Resize(int width, int height)
-        => Cv2.Resize(Mat, Mat, new OpenCvSharp.Size(width, height),0,0, InterpolationFlags.Area);
+        => Cv2.Resize(Mat, Mat, new OpenCvSharp.Size(width, height), 0, 0, InterpolationFlags.Area);
 
     public void Resize(OpenCvSharp.Size size)
         => Cv2.Resize(Mat, Mat, size, 0, 0, InterpolationFlags.Area);
@@ -68,7 +68,7 @@ public class SuperSampling : IDisposable
     }
 
     public Bitmap ToBitmap() => Mat.ToBitmap();
-}                
+}
 
 [SupportedOSPlatform("windows")]
 public static class ByteExtentions
@@ -96,13 +96,14 @@ public static class ByteExtentions
         return srcMat.ToBitmap();
     }
 
-    public static Image ToImage(this byte[] data ,int width, int height) => ImageFromByte(data, width, height);
-    public static Image ToImage(this byte[] data ,int size) => ImageFromByte(data, size);
+    public static Image ToImage(this byte[] data, int width, int height) => ImageFromByte(data, width, height);
+    public static Image ToImage(this byte[] data, int size) => ImageFromByte(data, size);
 
 }
 
 [SupportedOSPlatform("windows")]
-public static class ImageExtentions {
+public static class ImageExtentions
+{
     public static Mat ToMat(this Image image)
     {
         using var ms = new MemoryStream();
@@ -124,6 +125,9 @@ public static class ImageExtentions {
         return superSampling.ToBitmap();
     }
 
+    public static Image? ToRoundedImage(this byte[] data, int size)
+        => data.ToImage()?.Rounded(size);
+
     public static Image Rounded(this Image image, int size)
     {
         using var superSampling = new SuperSampling(image.ToMat(), 2.0);
@@ -133,7 +137,7 @@ public static class ImageExtentions {
         double aspectRatio = superSampling.AspectRatio;
         int rw, rh;
 
-        if (aspectRatio >= 1.0) 
+        if (aspectRatio >= 1.0)
         {
             rh = size;
             rw = (int)Math.Round(size * aspectRatio);
