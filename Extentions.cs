@@ -14,9 +14,11 @@ public class SuperSampling : IDisposable
     public int Width { get; private set; }
     public int Height { get; private set; }
     public double AspectRatio => (double)Width / (double)Height;
+    private OpenCvSharp.Size orgSize;
 
     private void Init(Mat srcMat, double scaleFactor)
     {
+        orgSize = new(srcMat.Width, srcMat.Height);
         Width= (int)(srcMat.Width * scaleFactor);
         Height = (int)(srcMat.Height * scaleFactor);
         var samplingSize = new OpenCvSharp.Size(Width, Height);
@@ -41,14 +43,31 @@ public class SuperSampling : IDisposable
     public void Resize(OpenCvSharp.Size size)
         => Cv2.Resize(Mat, Mat, size, 0, 0, InterpolationFlags.Area);
 
+    public void Resize(int size)
+    {
+        int newWidth, newHeight;
+
+        if (Width > Height)
+        {
+            newWidth = size;
+            newHeight = (int)(size / AspectRatio);
+        }
+        else
+        {
+            newHeight = size;
+            newWidth = (int)(size * AspectRatio);
+        }
+
+        Resize(newWidth, newHeight);
+    }
+
     public void Dispose()
     {
         Mat?.Dispose();
         GC.SuppressFinalize(this);
     }
 
-    public Bitmap ToBitmap()
-        => Mat.ToBitmap();
+    public Bitmap ToBitmap() => Mat.ToBitmap();
 }                
 
 [SupportedOSPlatform("windows")]
@@ -66,21 +85,7 @@ public static class ByteExtentions
     public static Image ImageFromByte(byte[] data, int size)
     {
         using var superSampling = new SuperSampling(data, ImreadModes.Color, 2.0);
-        int newWidth, newHeight;
-
-        if (superSampling.Width > superSampling.Height)
-        {
-            newWidth = size;
-            newHeight = (int)(size / superSampling.AspectRatio);
-        }
-        else
-        {
-            newHeight = size;
-            newWidth = (int)(size * superSampling.AspectRatio);
-        }
-
-        superSampling.Resize(newWidth, newHeight);
-
+        superSampling.Resize(size);
         return superSampling.ToBitmap();
     }
 
@@ -106,15 +111,15 @@ public static class ImageExtentions {
         return Cv2.ImDecode(bytes, ImreadModes.Unchanged);
     }
 
-
     public static Image Rounded(this Image image, int r)
     {
-        using var ss = new SuperSampling(image.ToMat(), 2.0);
-        using var mask = CreateCircleMask(ss.Mat.Size());
-        ss.Mat.SetAlphaFromMask(mask);
-        ss.Resize(new OpenCvSharp.Size(r, r));
+        using var superSampling = new SuperSampling(image.ToMat(), 2.0);
+        using var mask = CreateCircleMask(superSampling.Mat.Size());
+        superSampling.Mat.SetAlphaFromMask(mask);
 
-        return ss.ToBitmap();
+        superSampling.Resize(r);
+
+        return superSampling.ToBitmap();
     }
 
     private static Mat CreateCircleMask(OpenCvSharp.Size size)
