@@ -111,13 +111,39 @@ public static class ImageExtentions {
         return Cv2.ImDecode(bytes, ImreadModes.Unchanged);
     }
 
-    public static Image Rounded(this Image image, int r)
+    public static Image Resize(this Image image, int size)
+    {
+        using var superSampling = new SuperSampling(image.ToMat(), 2.0);
+        superSampling.Resize(size);
+        return superSampling.ToBitmap();
+    }
+    public static Image Resize(this Image image, int width, int height)
+    {
+        using var superSampling = new SuperSampling(image.ToMat(), 2.0);
+        superSampling.Resize(width, height);
+        return superSampling.ToBitmap();
+    }
+
+    public static Image Rounded(this Image image, int size)
     {
         using var superSampling = new SuperSampling(image.ToMat(), 2.0);
         using var mask = CreateCircleMask(superSampling.Mat.Size());
         superSampling.Mat.SetAlphaFromMask(mask);
 
-        superSampling.Resize(r);
+        double aspectRatio = superSampling.AspectRatio;
+        int rw, rh;
+
+        if (aspectRatio >= 1.0) 
+        {
+            rh = size;
+            rw = (int)Math.Round(size * aspectRatio);
+        }
+        else
+        {
+            rw = size;
+            rh = (int)Math.Round(size / aspectRatio);
+        }
+        superSampling.Resize(rw, rh);
 
         return superSampling.ToBitmap();
     }
