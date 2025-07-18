@@ -8,66 +8,66 @@ using OpenCvSharp.Extensions;
 namespace ImageExtentions;
 
 [SupportedOSPlatform("windows")]
-public class SuperSampling : IDisposable
+public class SuperSampling: IDisposable
 {
     public Mat Mat { get; } = new();
     public int Width { get; private set; }
     public int Height { get; private set; }
-    public double AspectRatio => (double)Width / (double)Height;
+    public double AspectRatio => (double)this.Width / (double)this.Height;
     private OpenCvSharp.Size orgSize;
 
     private void Init(Mat srcMat, double scaleFactor)
     {
-        orgSize = new(srcMat.Width, srcMat.Height);
-        Width = (int)(srcMat.Width * scaleFactor);
-        Height = (int)(srcMat.Height * scaleFactor);
-        var samplingSize = new OpenCvSharp.Size(Width, Height);
-        Cv2.Resize(srcMat, Mat, samplingSize, 0, 0, InterpolationFlags.Area);
+        this.orgSize = new(srcMat.Width, srcMat.Height);
+        this.Width = (int)(srcMat.Width * scaleFactor);
+        this.Height = (int)(srcMat.Height * scaleFactor);
+        var samplingSize = new OpenCvSharp.Size(this.Width, this.Height);
+        Cv2.Resize(srcMat, this.Mat, samplingSize, 0, 0, InterpolationFlags.Area);
     }
 
     public SuperSampling(byte[] data, ImreadModes mode, double scaleFactor = 2)
     {
         using var srcMat = Cv2.ImDecode(data, mode);
-        Init(srcMat, scaleFactor);
+        this.Init(srcMat, scaleFactor);
     }
 
     public SuperSampling(Mat srcMat, double scaleFactor)
-        => Init(srcMat, scaleFactor);
+        => this.Init(srcMat, scaleFactor);
 
     public OpenCvSharp.Size Size()
-        => Mat.Size();
+        => this.Mat.Size();
 
     public void Resize(int width, int height)
-        => Cv2.Resize(Mat, Mat, new OpenCvSharp.Size(width, height), 0, 0, InterpolationFlags.Area);
+        => Cv2.Resize(this.Mat, this.Mat, new OpenCvSharp.Size(width, height), 0, 0, InterpolationFlags.Area);
 
     public void Resize(OpenCvSharp.Size size)
-        => Cv2.Resize(Mat, Mat, size, 0, 0, InterpolationFlags.Area);
+        => Cv2.Resize(this.Mat, this.Mat, size, 0, 0, InterpolationFlags.Area);
 
     public void Resize(int size)
     {
         int newWidth, newHeight;
 
-        if (Width > Height)
+        if (this.Width > this.Height)
         {
             newWidth = size;
-            newHeight = (int)(size / AspectRatio);
+            newHeight = (int)(size / this.AspectRatio);
         }
         else
         {
             newHeight = size;
-            newWidth = (int)(size * AspectRatio);
+            newWidth = (int)(size * this.AspectRatio);
         }
 
-        Resize(newWidth, newHeight);
+        this.Resize(newWidth, newHeight);
     }
 
     public void Dispose()
     {
-        Mat?.Dispose();
+        this.Mat?.Dispose();
         GC.SuppressFinalize(this);
     }
 
-    public Bitmap ToBitmap() => Mat.ToBitmap();
+    public Bitmap ToBitmap() => this.Mat.ToBitmap();
 }
 
 [SupportedOSPlatform("windows")]
