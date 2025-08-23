@@ -131,25 +131,22 @@ public static class ImageExtentions
     public static Image Rounded(this Image image, int size)
     {
         using var superSampling = new SuperSampling(image.ToMat(), 2.0);
-        using var mask = CreateCircleMask(superSampling.Mat.Size());
-        superSampling.Mat.SetAlphaFromMask(mask);
 
-        double aspectRatio = superSampling.AspectRatio;
-        int rw, rh;
+        int minDimension = Math.Min(superSampling.Width, superSampling.Height);
+        int x = (superSampling.Width - minDimension) / 2;
+        int y = (superSampling.Height - minDimension) / 2;
 
-        if (aspectRatio >= 1.0)
-        {
-            rh = size;
-            rw = (int)Math.Round(size * aspectRatio);
-        }
-        else
-        {
-            rw = size;
-            rh = (int)Math.Round(size / aspectRatio);
-        }
-        superSampling.Resize(rw, rh);
+        using var squareMat = new Mat(superSampling.Mat, new OpenCvSharp.Rect(x, y, minDimension, minDimension));
 
-        return superSampling.ToBitmap();
+        using var mask = CreateCircleMask(squareMat.Size());
+        using var resultMat = new Mat();
+        squareMat.CopyTo(resultMat);
+        resultMat.SetAlphaFromMask(mask);
+
+        using var finalMat = new Mat();
+        Cv2.Resize(resultMat, finalMat, new OpenCvSharp.Size(size, size), 0, 0, InterpolationFlags.Area);
+
+        return finalMat.ToBitmap();
     }
 
     private static Mat CreateCircleMask(OpenCvSharp.Size size)
